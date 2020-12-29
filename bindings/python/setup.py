@@ -140,7 +140,7 @@ class LibtorrentBuildExt(BuildExtBase):
         (
             "libtorrent-link=",
             None,
-            "how to link to libtorrent ('static' or 'shared')",
+            "how to link to libtorrent ('static', 'shared' or 'prebuilt')",
         ),
         (
             "boost-link=",
@@ -164,16 +164,30 @@ class LibtorrentBuildExt(BuildExtBase):
     def initialize_options(self):
 
         self.cxxflags = None
+        self.linkflags = None
 
+        python_binding_dir = pathlib.Path(__file__).parent.absolute()
         try:
-            with open('compile_flags') as f:
+            with open(python_binding_dir / 'compile_flags') as f:
                 opts = f.read()
                 if '-std=c++' in opts:
                     self.cxxflags = '-std=c++' + opts.split('-std=c++')[-1].split()[0]
         except:
             pass
 
-        self.libtorrent_link = None
+        try:
+            with open(python_binding_dir / 'link_flags') as f:
+                opts = f.read().split(' ')
+                opts = [x for x in opts if x.startswith('-L')]
+                if len(opts):
+                    self.linkflags = opts
+        except:
+            pass
+
+        if os.name == "nt":
+            self.libtorrent_link = 'static'
+        else:
+            self.libtorrent_link = 'prebuilt'
         self.boost_link = None
         self.toolset = None
         self.pic = None
@@ -225,7 +239,10 @@ class LibtorrentBuildExt(BuildExtBase):
         if self.cxxstd:
             args.append(f"cxxstd={self.cxxstd}")
         if self.cxxflags:
-            args.append(f"cxxflags={self.cxxflags}")
+            args.append(f"cxxflags=\"{self.cxxflags}\"")
+        if self.linkflags:
+            for lf in self.linkflags:
+                args.append(f"linkflags=\"{lf}\"")
 
         # Jamfile hacks to ensure we select the python environment defined in
         # our project-config.jam
