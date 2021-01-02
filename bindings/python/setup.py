@@ -166,9 +166,8 @@ class LibtorrentBuildExt(BuildExtBase):
         self.cxxflags = None
         self.linkflags = None
 
-        python_binding_dir = pathlib.Path(__file__).parent.absolute()
         try:
-            with open(python_binding_dir / 'compile_flags') as f:
+            with open('compile_flags') as f:
                 opts = f.read()
                 if '-std=c++' in opts:
                     self.cxxflags = '-std=c++' + opts.split('-std=c++')[-1].split()[0]
@@ -176,7 +175,7 @@ class LibtorrentBuildExt(BuildExtBase):
             pass
 
         try:
-            with open(python_binding_dir / 'link_flags') as f:
+            with open('link_flags') as f:
                 opts = f.read().split(' ')
                 opts = [x for x in opts if x.startswith('-L')]
                 if len(opts):
